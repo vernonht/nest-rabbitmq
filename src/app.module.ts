@@ -6,7 +6,10 @@ import { AppService } from './app.service';
 import { Bot } from './entities/bot.entity';
 import { BotJob } from './entities/bot-job.entity';
 import { Order } from './entities/order.entity';
+import { BotModule } from './modules/bot/bot.module';
+import { ControllerModule } from './modules/controller/controller.module';
 import { OrderModule } from './modules/order/order.module';
+import { QueueModule } from './modules/queue/queue.module';
 
 @Module({
   imports: [
@@ -27,6 +30,9 @@ import { OrderModule } from './modules/order/order.module';
       }),
     }),
     OrderModule,
+    QueueModule,
+    BotModule,
+    ControllerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

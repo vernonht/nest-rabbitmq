@@ -1,4 +1,11 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Bot } from './bot.entity';
 import { Order } from './order.entity';
 
@@ -14,11 +21,17 @@ export class BotJob {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Order, (order) => order.jobs, { nullable: false, onDelete: 'CASCADE' })
+  @ManyToOne(() => Order, (order) => order.jobs, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'order_id' })
   order: Order;
 
-  @ManyToOne(() => Bot, (bot) => bot.jobs, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Bot, (bot) => bot.jobs, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'bot_id' })
   bot: Bot | null;
 

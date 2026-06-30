@@ -1,4 +1,9 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+} from 'typeorm';
 
 export class CreateInitialTables1680000000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -7,8 +12,18 @@ export class CreateInitialTables1680000000000 implements MigrationInterface {
         name: 'orders',
         columns: [
           { name: 'id', type: 'serial', isPrimary: true },
-          { name: 'orderType', type: 'enum', enum: ['VIP', 'NORMAL'], default: "'NORMAL'" },
-          { name: 'status', type: 'enum', enum: ['PENDING', 'ASSIGNED', 'PROCESSING', 'COMPLETE', 'FAILED'], default: "'PENDING'" },
+          {
+            name: 'orderType',
+            type: 'enum',
+            enum: ['VIP', 'NORMAL'],
+            default: "'NORMAL'",
+          },
+          {
+            name: 'status',
+            type: 'enum',
+            enum: ['PENDING', 'ASSIGNED', 'PROCESSING', 'COMPLETE', 'FAILED'],
+            default: "'PENDING'",
+          },
           { name: 'payload', type: 'text', isNullable: true },
           { name: 'priority', type: 'int', default: 1 },
           { name: 'created_at', type: 'timestamptz', default: 'NOW()' },
@@ -39,7 +54,12 @@ export class CreateInitialTables1680000000000 implements MigrationInterface {
           { name: 'id', type: 'serial', isPrimary: true },
           { name: 'order_id', type: 'int', isNullable: false },
           { name: 'bot_id', type: 'int', isNullable: true },
-          { name: 'status', type: 'enum', enum: ['QUEUED', 'PROCESSING', 'COMPLETED', 'FAILED'], default: "'QUEUED'" },
+          {
+            name: 'status',
+            type: 'enum',
+            enum: ['QUEUED', 'PROCESSING', 'COMPLETED', 'FAILED'],
+            default: "'QUEUED'",
+          },
           { name: 'queued_at', type: 'timestamptz', default: 'NOW()' },
           { name: 'started_at', type: 'timestamptz', isNullable: true },
           { name: 'completed_at', type: 'timestamptz', isNullable: true },
@@ -73,8 +93,12 @@ export class CreateInitialTables1680000000000 implements MigrationInterface {
     const table = await queryRunner.getTable('bot_jobs');
 
     if (table) {
-      const foreignKeyOrder = table.foreignKeys.find((fk) => fk.columnNames.includes('order_id'));
-      const foreignKeyBot = table.foreignKeys.find((fk) => fk.columnNames.includes('bot_id'));
+      const foreignKeyOrder = table.foreignKeys.find((fk) =>
+        fk.columnNames.includes('order_id'),
+      );
+      const foreignKeyBot = table.foreignKeys.find((fk) =>
+        fk.columnNames.includes('bot_id'),
+      );
 
       if (foreignKeyOrder) {
         await queryRunner.dropForeignKey('bot_jobs', foreignKeyOrder);
