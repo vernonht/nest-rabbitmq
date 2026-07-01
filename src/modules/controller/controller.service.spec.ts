@@ -1,5 +1,5 @@
 import { ControllerService } from './controller.service';
-import { Order, OrderStatus, OrderType } from '../../entities/order.entity';
+import { OrderStatus, OrderType } from '../../entities/order.entity';
 
 describe('ControllerService', () => {
   it('creates an order and enqueues it for processing', async () => {
@@ -22,11 +22,15 @@ describe('ControllerService', () => {
       findAll: jest.fn(),
       create: jest.fn(),
     } as any;
+    const producerService = {
+      emitOrderJob: jest.fn(),
+    } as any;
 
     const service = new ControllerService(
       orderService,
       queueService,
       botService,
+      producerService,
     );
     const result = await service.createOrder({
       orderType: OrderType.NORMAL,

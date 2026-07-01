@@ -10,6 +10,6 @@ import { BotsController } from '../bot/bot.controller';
   imports: [OrderModule, QueueModule, BotModule],
   providers: [ControllerService],
   controllers: [OrdersController, BotsController],
-  exports: [ControllerService],
+  exports: [ControllerService, QueueModule],
 })
 export class ControllerModule {}

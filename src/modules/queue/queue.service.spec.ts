@@ -1,10 +1,11 @@
 import { QueueService } from './queue.service';
+import { OrderService } from '../order/order.service';
 import { Order, OrderStatus, OrderType } from '../../entities/order.entity';
 
 describe('QueueService', () => {
   it('keeps VIP orders ahead of normal orders', () => {
-    const orderService = { updateStatus: jest.fn() } as any;
-    const service = new QueueService(orderService);
+    const orderService = { updateStatus: jest.fn() };
+    const service = new QueueService(orderService as unknown as OrderService);
 
     const vip1 = {
       id: 1,

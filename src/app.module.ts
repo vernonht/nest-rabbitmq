@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Bot } from './entities/bot.entity';
@@ -10,10 +12,13 @@ import { BotModule } from './modules/bot/bot.module';
 import { ControllerModule } from './modules/controller/controller.module';
 import { OrderModule } from './modules/order/order.module';
 import { QueueModule } from './modules/queue/queue.module';
+import { GatewayModule } from './modules/gateway/gateway.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: ['.env'] }),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
+    EventEmitterModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -33,6 +38,7 @@ import { QueueModule } from './modules/queue/queue.module';
     QueueModule,
     BotModule,
     ControllerModule,
+    GatewayModule,
   ],
   controllers: [AppController],
   providers: [AppService],
