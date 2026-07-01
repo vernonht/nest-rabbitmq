@@ -1,98 +1,267 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# NestJS Queue Management System
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS-based queue management system with priority ordering, RabbitMQ async processing, and real-time WebSocket updates — migrated from a Go implementation.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Architecture
 
-## Description
+```mermaid
+graph TB
+    subgraph Clients
+        HTTP[HTTP Clients]
+        WS[WebSocket Clients]
+    end
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+    subgraph API_Layer[NestJS API Layer]
+        OC[OrdersController]
+        BC[BotsController]
+        AC[AppController<br/>GET /state]
+        GW[EventsGateway<br/>WebSocket]
+    end
 
-## Project setup
+    subgraph Service_Layer[Service Layer]
+        CS[ControllerService<br/>Orchestration]
+        OS[OrderService<br/>CRUD + Status]
+        QS[QueueService<br/>Priority Queue]
+        BS[BotService<br/>Bot Lifecycle]
+    end
 
-```bash
-$ npm install
+    subgraph Async_Layer[Async Processing]
+        PS[ProducerService<br/>Job Emission]
+        RMQ[(RabbitMQ<br/>orders.process)]
+        CNS[ConsumerService<br/>Job Processing]
+    end
+
+    subgraph Storage[Persistence]
+        PG[(PostgreSQL)]
+    end
+
+    HTTP --> OC
+    HTTP --> BC
+    HTTP --> AC
+    WS --> GW
+
+    OC --> CS
+    BC --> CS
+    AC --> CS
+
+    CS --> OS
+    CS --> QS
+    CS --> BS
+    CS --> PS
+
+    OS --> PG
+    BS --> PG
+
+    PS --> RMQ
+    RMQ --> CNS
+    CNS --> OS
+
+    CS -.->|EventEmitter| GW
 ```
 
-## Compile and run the project
+## Process Flow
 
-```bash
-# development
-$ npm run start
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant Ctrl as Controller
+    participant OS as OrderService
+    participant QS as QueueService
+    participant BS as BotService
+    participant PS as ProducerService
+    participant RMQ as RabbitMQ
+    participant CNS as Consumer
+    participant GW as WebSocket
 
-# watch mode
-$ npm run start:dev
+    Note over C,GW: Order Creation & Processing
 
-# production mode
-$ npm run start:prod
+    C->>Ctrl: POST /orders
+    Ctrl->>OS: create(order)
+    OS-->>Ctrl: Order (PENDING)
+    Ctrl->>QS: enqueue(order)
+    Ctrl-->>C: 201 Order
+    
+    par Process Queue
+        Ctrl->>BS: getActiveBots()
+        BS-->>Ctrl: [Bot]
+        Ctrl->>QS: dequeue()
+        QS->>OS: updateStatus(ASSIGNED)
+        QS-->>Ctrl: Order
+        Ctrl->>PS: emitOrderJob(order)
+        PS->>RMQ: sendToQueue(orders.process)
+        Ctrl-->>GW: emit order:assigned
+        GW-->>C: order:assigned
+    end
+
+    Note over CNS,RMQ: Async Processing (~10s)
+
+    RMQ-->>CNS: consume message
+    CNS->>OS: updateStatus(COMPLETE)
+    CNS-->>GW: emit order:completed
+    GW-->>C: order:completed
+
+    Note over C,GW: Bot Lifecycle
+
+    C->>Ctrl: POST /bots
+    Ctrl->>BS: createBot(name)
+    BS-->>Ctrl: Bot
+    Ctrl->>QS: processQueuedOrders()
+    Ctrl-->>C: 201 Bot
+    GW-->>C: bot:added
 ```
 
-## Run tests
+## Tech Stack
 
-```bash
-# unit tests
-$ npm run test
+| Component | Technology | Purpose |
+|---|---|---|
+| **Framework** | NestJS 11 + TypeScript | Application framework |
+| **Database** | PostgreSQL + TypeORM | Persistent storage (Order, Bot, BotJob entities) |
+| **Message Queue** | RabbitMQ (amqp-connection-manager) | Async bot job processing |
+| **Real-Time** | Socket.IO (NestJS WebSocket Gateway) | Live state push to clients |
+| **Rate Limiting** | @nestjs/throttler | 100 req/min per IP on POST /orders |
+| **Testing** | Jest + Supertest | Unit, integration, and load tests |
 
-# e2e tests
-$ npm run test:e2e
+## Project Structure
 
-# test coverage
-$ npm run test:cov
+```
+src/
+├── app.module.ts              # Root module
+├── app.controller.ts          # GET /, GET /state
+├── entities/                  # TypeORM entities
+│   ├── order.entity.ts        # Order (id, type, status, payload, priority)
+│   ├── bot.entity.ts          # Bot (id, name, active)
+│   └── bot-job.entity.ts      # BotJob (processing history)
+├── modules/
+│   ├── order/
+│   │   ├── order.module.ts
+│   │   ├── order.service.ts   # CRUD + status transitions
+│   │   ├── order.controller.ts# POST /orders, GET /orders, GET /orders/:id
+│   │   └── dto/
+│   ├── queue/
+│   │   ├── queue.module.ts
+│   │   ├── queue.service.ts   # In-memory priority queue (VIP + Normal FIFO)
+│   │   ├── producer.service.ts# RabbitMQ job emission
+│   │   ├── consumer.service.ts# Job processing (10s simulated work)
+│   │   └── rabbitmq.service.ts# Connection lifecycle
+│   ├── bot/
+│   │   ├── bot.module.ts
+│   │   ├── bot.service.ts     # Bot CRUD + active tracking
+│   │   └── bot.controller.ts  # POST /bots, GET /bots, DELETE /bots/:id
+│   ├── controller/
+│   │   ├── controller.module.ts
+│   │   └── controller.service.ts# Orchestration layer
+│   └── gateway/
+│       ├── gateway.module.ts
+│       └── events.gateway.ts  # WebSocket event broadcasting
+└── common/
+    ├── filters/
+    │   └── global-exception.filter.ts
+    └── guards/
+        └── rate-limit.guard.ts
+test/
+├── phase5.e2e-spec.ts         # Integration tests
+└── load/
+    └── priority.load-spec.ts  # Load tests (500 concurrent orders)
 ```
 
-## Deployment
+## Priority Queue Logic
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Orders are queued by priority tier — VIP orders are always dequeued before Normal orders. Within each tier, FIFO order is preserved.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+| Operation | VIP Placement | Normal Placement |
+|---|---|---|
+| `enqueue()` | After last existing VIP | Append to tail |
+| `enqueueFront()` | Before first Normal (after existing VIPs) | Absolute head |
+
+## API Endpoints
+
+| Method | Path | Description | Rate Limited |
+|---|---|---|---|
+| `GET` | `/` | Health check | No |
+| `GET` | `/state` | Full system state (orders, queue, bots) | No |
+| `POST` | `/orders` | Create order `{ orderType: "VIP"\|"NORMAL", payload?: string }` | Yes (100/min/IP) |
+| `GET` | `/orders` | List all orders | No |
+| `GET` | `/orders/:id` | Get order by ID | No |
+| `POST` | `/bots` | Add bot `{ name: string }` | No |
+| `GET` | `/bots` | List all bots | No |
+| `DELETE` | `/bots/:id` | Remove bot (soft-delete) | No |
+
+## WebSocket Events
+
+Connect to `ws://localhost:3000`:
+
+| Event | Direction | Payload |
+|---|---|---|
+| `order:created` | → client | `{ id, orderType, status, ... }` |
+| `order:assigned` | → client | `{ id, botId, ... }` |
+| `order:completed` | → client | `{ id, status: "COMPLETE", ... }` |
+| `bot:added` | → client | `{ id, name, active: true }` |
+| `bot:removed` | → client | `{ id }` |
+| `state:updated` | → client | `{ orders: [], queue: [], bots: [] }` |
+
+## Setup
+
+### Prerequisites
+
+- Node.js 22+
+- PostgreSQL
+- RabbitMQ
+
+### Environment
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+cp .env.example .env
+# Edit .env with your DB and RabbitMQ credentials
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Key defaults:
 
-## Resources
+| Variable | Default |
+|---|---|
+| `DB_HOST` | `localhost` |
+| `DB_PORT` | `5432` |
+| `DB_USER` | `postgres` |
+| `DB_PASSWORD` | `postgres` |
+| `DB_NAME` | `nest_rabbitmq` |
+| `RABBITMQ_URL` | `amqp://localhost` |
 
-Check out a few resources that may come in handy when working with NestJS:
+### Install & Run
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+npm install
+npm run start:dev        # Development (watch mode)
+```
 
-## Support
+### Database
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+# Run migrations
+npm run typeorm:migrate
 
-## Stay in touch
+# Revert last migration
+npm run typeorm:revert
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+The app does **not** use `synchronize: true` — always run migrations explicitly in production.
 
-## License
+## Testing
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+# Unit tests (39 tests across 11 suites)
+npm test
+
+# E2E + Load tests (10 tests across 3 suites)
+npm run test:e2e
+
+# All tests (49 total)
+npm test && npm run test:e2e
+```
+
+### What's tested
+
+| Suite | Tests | Scope |
+|---|---|---|
+| **Unit** | 39 | Order, Bot, Queue, Producer, Consumer, RabbitMQ services + Controllers + WebSocket Gateway |
+| **Integration** (e2e) | 4 | HTTP pipeline through full AppModule (order → state → bot lifecycle → 404) |
+| **Load** | 5 | 500 concurrent orders, VIP priority enforcement, FIFO within tiers, enqueueFront behavior |
+| **Manual** | — | `TEST_CHECKLIST.md` with 10-section interactive checklist |
