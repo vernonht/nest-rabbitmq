@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, NotFoundException } from '@nestjs/common';
 import { CreateOrderDto } from '../order/dto/create-order.dto';
 import { OrderService } from '../order/order.service';
 import { BotService } from '../bot/bot.service';
@@ -47,7 +47,7 @@ export class ControllerService implements OnModuleInit {
   async findOne(id: number): Promise<Order> {
     const order = await this.orderService.findOne(id);
     if (!order) {
-      throw new Error(`Order ${id} not found`);
+      throw new NotFoundException(`Order ${id} not found`);
     }
     return order;
   }
