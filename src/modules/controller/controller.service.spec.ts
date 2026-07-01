@@ -4,7 +4,11 @@ import { Order, OrderStatus, OrderType } from '../../entities/order.entity';
 describe('ControllerService', () => {
   it('creates an order and enqueues it for processing', async () => {
     const orderService = {
-      create: jest.fn().mockResolvedValue({ id: 10, orderType: OrderType.NORMAL, status: OrderStatus.PENDING } as Order),
+      create: jest.fn().mockResolvedValue({
+        id: 10,
+        orderType: OrderType.NORMAL,
+        status: OrderStatus.PENDING,
+      }),
       findAll: jest.fn(),
       findOne: jest.fn(),
     } as any;
@@ -19,8 +23,15 @@ describe('ControllerService', () => {
       create: jest.fn(),
     } as any;
 
-    const service = new ControllerService(orderService, queueService, botService);
-    const result = await service.createOrder({ orderType: OrderType.NORMAL, payload: 'hello' } as any);
+    const service = new ControllerService(
+      orderService,
+      queueService,
+      botService,
+    );
+    const result = await service.createOrder({
+      orderType: OrderType.NORMAL,
+      payload: 'hello',
+    });
 
     expect(orderService.create).toHaveBeenCalled();
     expect(queueService.enqueue).toHaveBeenCalledWith(result);

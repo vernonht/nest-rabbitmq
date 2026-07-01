@@ -28,8 +28,27 @@ export class ControllerService {
     await this.botService.remove(id);
   }
 
+  async findAll(): Promise<Order[]> {
+    return this.orderService.findAll();
+  }
+
+  async findOne(id: number): Promise<Order> {
+    const order = await this.orderService.findOne(id);
+    if (!order) {
+      throw new Error(`Order ${id} not found`);
+    }
+    return order;
+  }
+
+  async findAllBots(): Promise<Bot[]> {
+    return this.botService.findAll();
+  }
+
   async getState(): Promise<{ orders: Order[]; queue: Order[]; bots: Bot[] }> {
-    const [orders, bots] = await Promise.all([this.orderService.findAll(), this.botService.findAll()]);
+    const [orders, bots] = await Promise.all([
+      this.orderService.findAll(),
+      this.botService.findAll(),
+    ]);
 
     return {
       orders,

@@ -42,7 +42,9 @@ export class QueueService {
   }
 
   private findInsertionIndex(order: Order, front: boolean): number {
-    const firstNormal = this.queue.findIndex((queuedOrder) => queuedOrder.orderType === OrderType.NORMAL);
+    const firstNormal = this.queue.findIndex(
+      (queuedOrder) => queuedOrder.orderType === OrderType.NORMAL,
+    );
 
     if (front) {
       if (order.orderType === OrderType.VIP && firstNormal >= 0) {

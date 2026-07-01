@@ -6,9 +6,21 @@ describe('QueueService', () => {
     const orderService = { updateStatus: jest.fn() } as any;
     const service = new QueueService(orderService);
 
-    const vip1 = { id: 1, orderType: OrderType.VIP, status: OrderStatus.PENDING } as Order;
-    const normal1 = { id: 2, orderType: OrderType.NORMAL, status: OrderStatus.PENDING } as Order;
-    const vip2 = { id: 3, orderType: OrderType.VIP, status: OrderStatus.PENDING } as Order;
+    const vip1 = {
+      id: 1,
+      orderType: OrderType.VIP,
+      status: OrderStatus.PENDING,
+    } as Order;
+    const normal1 = {
+      id: 2,
+      orderType: OrderType.NORMAL,
+      status: OrderStatus.PENDING,
+    } as Order;
+    const vip2 = {
+      id: 3,
+      orderType: OrderType.VIP,
+      status: OrderStatus.PENDING,
+    } as Order;
 
     service.enqueue(vip1);
     service.enqueue(normal1);

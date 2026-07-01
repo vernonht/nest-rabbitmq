@@ -30,7 +30,10 @@ export class OrderService {
   }
 
   async findPending(): Promise<Order[]> {
-    return this.orderRepository.find({ where: { status: OrderStatus.PENDING }, relations: ['jobs'] });
+    return this.orderRepository.find({
+      where: { status: OrderStatus.PENDING },
+      relations: ['jobs'],
+    });
   }
 
   async updateStatus(id: number, status: OrderStatus): Promise<Order> {
