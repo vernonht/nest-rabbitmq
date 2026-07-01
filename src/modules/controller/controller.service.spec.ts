@@ -1,30 +1,39 @@
 import { ControllerService } from './controller.service';
 import { OrderStatus, OrderType } from '../../entities/order.entity';
+import { OrderService } from '../order/order.service';
+import { QueueService } from '../queue/queue.service';
+import { BotService } from '../bot/bot.service';
+import { ProducerService } from '../queue/producer.service';
 
 describe('ControllerService', () => {
   it('creates an order and enqueues it for processing', async () => {
+    const createMock = jest.fn().mockResolvedValue({
+      id: 10,
+      orderType: OrderType.NORMAL,
+      status: OrderStatus.PENDING,
+    });
+    const findAllMock = jest.fn();
+    const findOneMock = jest.fn();
     const orderService = {
-      create: jest.fn().mockResolvedValue({
-        id: 10,
-        orderType: OrderType.NORMAL,
-        status: OrderStatus.PENDING,
-      }),
-      findAll: jest.fn(),
-      findOne: jest.fn(),
-    } as any;
+      create: createMock,
+      findAll: findAllMock,
+      findOne: findOneMock,
+    } as unknown as OrderService;
+    const enqueueMock = jest.fn();
+    const getQueueMock = jest.fn().mockReturnValue([]);
     const queueService = {
-      enqueue: jest.fn(),
-      getQueue: jest.fn().mockReturnValue([]),
-    } as any;
+      enqueue: enqueueMock,
+      getQueue: getQueueMock,
+    } as unknown as QueueService;
     const botService = {
       getActiveBots: jest.fn().mockReturnValue([]),
       remove: jest.fn(),
       findAll: jest.fn(),
-      create: jest.fn(),
-    } as any;
+      createBot: jest.fn(),
+    } as unknown as BotService;
     const producerService = {
       emitOrderJob: jest.fn(),
-    } as any;
+    } as unknown as ProducerService;
 
     const service = new ControllerService(
       orderService,
@@ -37,8 +46,8 @@ describe('ControllerService', () => {
       payload: 'hello',
     });
 
-    expect(orderService.create).toHaveBeenCalled();
-    expect(queueService.enqueue).toHaveBeenCalledWith(result);
+    expect(createMock).toHaveBeenCalled();
+    expect(enqueueMock).toHaveBeenCalledWith(result);
     expect(result.status).toBe(OrderStatus.PENDING);
   });
 });

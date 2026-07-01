@@ -14,10 +14,10 @@ export class ConsumerService implements OnModuleInit {
     private readonly rabbitMQService: RabbitMQService,
   ) {}
 
-  async onModuleInit(): Promise<void> {
+  onModuleInit(): void {
     // Delay startup of consumer to allow RabbitMQ to connect
     setTimeout(() => {
-      this.startConsuming();
+      void this.startConsuming();
     }, 1000);
   }
 
@@ -36,21 +36,23 @@ export class ConsumerService implements OnModuleInit {
     try {
       await channel.consume(
         'orders.process',
-        async (msg: Message | null) => {
-          if (!msg) return;
+        (msg: Message | null) => {
+          void (async () => {
+            if (!msg) return;
 
-          try {
-            const jobData: JobData = JSON.parse(msg.content.toString());
-            await this.handleOrderProcessing(jobData);
-            // Acknowledge the message after successful processing
-            await channel.ack(msg);
-          } catch (error) {
-            this.logger.error(
-              `Error processing message: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            );
-            // Nack and requeue on error
-            await channel.nack(msg, false, true);
-          }
+            try {
+              const jobData = JSON.parse(msg.content.toString()) as JobData;
+              await this.handleOrderProcessing(jobData);
+              // Acknowledge the message after successful processing
+              channel.ack(msg);
+            } catch (error) {
+              this.logger.error(
+                `Error processing message: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              );
+              // Nack and requeue on error
+              channel.nack(msg, false, true);
+            }
+          })();
         },
         { noAck: false },
       );

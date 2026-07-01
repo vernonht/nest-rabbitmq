@@ -41,7 +41,7 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
         this.connected = true;
       });
 
-      this.connection.on('disconnect', (err) => {
+      this.connection.on('disconnect', (err: unknown) => {
         this.logger.error(
           `Disconnected from RabbitMQ: ${err instanceof Error ? err.message : String(err)}`,
         );

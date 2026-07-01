@@ -1,5 +1,4 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { OnEvent } from '@nestjs/event-emitter';
 import { CreateOrderDto } from '../order/dto/create-order.dto';
 import { OrderService } from '../order/order.service';
 import { BotService } from '../bot/bot.service';
@@ -19,21 +18,21 @@ export class ControllerService implements OnModuleInit {
 
   onModuleInit() {
     // Trigger initial processing of any pending orders
-    this.processQueuedOrders();
+    void this.processQueuedOrders();
   }
 
   async createOrder(createOrderDto: CreateOrderDto): Promise<Order> {
     const order = await this.orderService.create(createOrderDto);
     this.queueService.enqueue(order);
     // Immediately try to process queued orders
-    this.processQueuedOrders();
+    void this.processQueuedOrders();
     return order;
   }
 
   async addBot(name: string): Promise<Bot> {
     const bot = await this.botService.createBot(name);
     // When a new bot is added, process queued orders
-    this.processQueuedOrders();
+    void this.processQueuedOrders();
     return bot;
   }
 
