@@ -2,6 +2,7 @@ import { Controller, Post, Get, Delete, Param, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ControllerService } from '../controller/controller.service';
 import { Bot } from '../../entities/bot.entity';
+import { CreateBotDto } from './dto/create-bot.dto';
 
 @ApiTags('Bots')
 @Controller('bots')
@@ -11,7 +12,7 @@ export class BotsController {
   @Post()
   @ApiOperation({ summary: 'Add a new bot' })
   @ApiResponse({ status: 201, description: 'Bot created', type: Bot })
-  async create(@Body() body: { name: string }): Promise<Bot> {
+  async create(@Body() body: CreateBotDto): Promise<Bot> {
     return this.controllerService.addBot(body.name);
   }
 
