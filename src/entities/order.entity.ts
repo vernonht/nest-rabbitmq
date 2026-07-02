@@ -2,11 +2,9 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { BotJob } from './bot-job.entity';
 
 export enum OrderType {
   VIP = 'VIP',
@@ -37,9 +35,6 @@ export class Order {
 
   @Column({ type: 'int', default: 1 })
   priority: number;
-
-  @OneToMany(() => BotJob, (botJob) => botJob.order)
-  jobs: BotJob[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

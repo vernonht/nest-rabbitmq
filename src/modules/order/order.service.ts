@@ -22,17 +22,16 @@ export class OrderService {
   }
 
   async findAll(): Promise<Order[]> {
-    return this.orderRepository.find({ relations: ['jobs'] });
+    return this.orderRepository.find();
   }
 
   async findOne(id: number): Promise<Order | null> {
-    return this.orderRepository.findOne({ where: { id }, relations: ['jobs'] });
+    return this.orderRepository.findOne({ where: { id } });
   }
 
   async findPending(): Promise<Order[]> {
     return this.orderRepository.find({
       where: { status: OrderStatus.PENDING },
-      relations: ['jobs'],
     });
   }
 

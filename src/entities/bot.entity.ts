@@ -2,11 +2,9 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { BotJob } from './bot-job.entity';
 
 @Entity({ name: 'bots' })
 export class Bot {
@@ -18,9 +16,6 @@ export class Bot {
 
   @Column({ type: 'boolean', default: true })
   active: boolean;
-
-  @OneToMany(() => BotJob, (job) => job.bot)
-  jobs: BotJob[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

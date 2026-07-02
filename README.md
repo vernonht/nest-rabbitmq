@@ -115,7 +115,7 @@ sequenceDiagram
 | Component | Technology | Purpose |
 |---|---|---|
 | **Framework** | NestJS 11 + TypeScript | Application framework |
-| **Database** | PostgreSQL + TypeORM | Persistent storage (Order, Bot, BotJob entities) |
+| **Database** | PostgreSQL + TypeORM | Persistent storage (Order, Bot entities) |
 | **Message Queue** | RabbitMQ (amqp-connection-manager) | Async bot job processing |
 | **Real-Time** | Socket.IO (NestJS WebSocket Gateway) | Live state push to clients |
 | **Rate Limiting** | @nestjs/throttler | 100 req/min per IP on POST /orders |
@@ -129,8 +129,7 @@ src/
 ├── app.controller.ts          # GET /, GET /state
 ├── entities/                  # TypeORM entities
 │   ├── order.entity.ts        # Order (id, type, status, payload, priority)
-│   ├── bot.entity.ts          # Bot (id, name, active)
-│   └── bot-job.entity.ts      # BotJob (processing history)
+│   └── bot.entity.ts          # Bot (id, name, active)
 ├── modules/
 │   ├── order/
 │   │   ├── order.module.ts
@@ -154,10 +153,8 @@ src/
 │       ├── gateway.module.ts
 │       └── events.gateway.ts  # WebSocket event broadcasting
 └── common/
-    ├── filters/
-    │   └── global-exception.filter.ts
-    └── guards/
-        └── rate-limit.guard.ts
+    └── filters/
+        └── global-exception.filter.ts
 test/
 ├── phase5.e2e-spec.ts         # Integration tests
 └── load/

@@ -78,12 +78,12 @@ describe('OrderService', () => {
   });
 
   describe('findAll', () => {
-    it('returns all orders with jobs relation', async () => {
+    it('returns all orders', async () => {
       repo.find.mockResolvedValue([mockOrder]);
 
       const result = await service.findAll();
 
-      expect(repo.find).toHaveBeenCalledWith({ relations: ['jobs'] });
+      expect(repo.find).toHaveBeenCalledWith();
       expect(result).toEqual([mockOrder]);
     });
   });
@@ -96,7 +96,6 @@ describe('OrderService', () => {
 
       expect(repo.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
-        relations: ['jobs'],
       });
       expect(result).toEqual(mockOrder);
     });
@@ -118,7 +117,6 @@ describe('OrderService', () => {
 
       expect(repo.find).toHaveBeenCalledWith({
         where: { status: OrderStatus.PENDING },
-        relations: ['jobs'],
       });
       expect(result).toEqual([mockOrder]);
     });
@@ -134,7 +132,6 @@ describe('OrderService', () => {
 
       expect(repo.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
-        relations: ['jobs'],
       });
       expect(repo.save).toHaveBeenCalledWith(
         expect.objectContaining({ status: OrderStatus.ASSIGNED }),

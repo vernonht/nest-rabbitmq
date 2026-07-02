@@ -4,9 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { Bot } from './entities/bot.entity';
-import { BotJob } from './entities/bot-job.entity';
 import { Order } from './entities/order.entity';
 import { BotModule } from './modules/bot/bot.module';
 import { ControllerModule } from './modules/controller/controller.module';
@@ -29,7 +27,7 @@ import { GatewayModule } from './modules/gateway/gateway.module';
         username: config.get<string>('DB_USER', 'postgres'),
         password: config.get<string>('DB_PASSWORD', 'postgres'),
         database: config.get<string>('DB_NAME', 'nest_rabbitmq'),
-        entities: [Order, Bot, BotJob],
+        entities: [Order, Bot],
         synchronize: false,
         logging: false,
       }),
@@ -41,6 +39,6 @@ import { GatewayModule } from './modules/gateway/gateway.module';
     GatewayModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [],
 })
 export class AppModule {}
